@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF</td>-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Showroom Mobil</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+</head>
+<body class="bg-white dark:bg-gray-700">
+    <div class="m-4 p-4 justify-center">
+        <div class="header flex justify-between items-center text-white p-4 rounded-lg shadow-md mb-4">
+            <h1 class="text-gray-800 dark:text-white text-2xl">Showroom Mobil</h1>
+            <button class="bg-blue-500 hover:bg-blue-600 p-2 rounded-lg cursor-pointer">Add Car</button>
+        </div>
+
+        <div class="content-car overflow-x-auto shadow-lg p-4 rounded-lg h-[75vh]">
+            <table class="w-full table-auto border-collapse border border-gray-300">
+                <thead class="bg-gray-200">
+                    <tr>
+                        <th class="border border-gray-300 p-2">ID</th>
+                        <th class="border border-gray-300 p-2">Merk</th>
+                        <th class="border border-gray-300 p-2">Model</th>
+                        <th class="border border-gray-300 p-2">Year</th>
+                        <th class="border border-gray-300 p-2">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for car in cars %}
+                    <tr class="hover:bg-gray-100">
+                        <td class="border border-gray-300 p-2">{{ car.id }}</td>
+                        <td class="border border-gray-300 p-2">{{ car.merk }}</td>
+                        <td class="border border-gray-300 p-2">{{ car.model }}</td>
+                        <td class="border border-gray-300 p-2">{{ car.year }}</td>
+                        <td class="border border-gray-300 p-2 flex justify-center gap-2">
+                            <form method="POST" action="{% url 'detail_car' car.id %}" class="ml-2">
+                                {% csrf_token %}
+                                <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white p-1 rounded-lg">Detail</button>
+                            </form>
+                            <form method="POST" action="{% url 'delete_car' car.id %}" class="ml-2">
+                                {% csrf_token %}
+                                <button type="submit" class="bg-red-500 hover:bg-red-600 text-white p-1 rounded-lg">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center p-2"> - No cars available - </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="add-car-modal" class="hidden fixed inset-0 bg-gray-700/50 bg-blur-90 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-lg p-4 w-1/3">
+            <h2 class="text-xl mb-4">Add Car</h2>
+            <form id="add-car-form" method="POST" action="{% url 'add_car' %}">
+                {% csrf_token %}
+                <div class="flex w-full justify-between mb-4">
+                    <div>
+                        <label for="merk" class="block text-gray-700">Merk:</label>
+                        <input type="text" id="merk" name="merk" class="border border-gray-300 p-2 w-full rounded-lg" required>
+                    </div>
+                    
+                    <div>
+                        <label for="model" class="block text-gray-700">Model:</label>
+                        <input type="text" id="model" name="model" class="border border-gray-300 p-2 w-full rounded-lg" required>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <label for="year" class="block text-gray-700">Year:</label>
+                    <input type="number" id="year" name="year" class="border border-gray-300 p-2 w-full rounded-lg" required>
+                </div>
+                
+                <div class="mb-4">
+                    <label for="base_price" class="block text-gray-700">Base price:</label>
+                    <div class="relative">
+                        <input type="number" step="0.01" id="base_price" name="base_price" class="border pr-10 border-gray-300 p-2 w-full rounded-lg" required>
+                        <span class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none">Rp</span>
+                    </div>
+                </div>
+
+                <div class="mb-4 flex gap-2 items-center">
+                    <input type="checkbox" id="use_bank" name="use_bank" class="border border-gray-300 p-2 rounded-lg">
+                    <label for="use_bank" class="block text-gray-700">using bank funds</label>
+                </div>
+
+                <div class="bank-content hidden">
+                    <div class="mb-4">
+                        <label for="loan" class="block text-gray-700">Loan amount:</label>
+                        <div class="relative">
+                            <input type="number" step="0.01" id="loan" name="loan" class="border pr-10 border-gray-300 p-2 w-full rounded-lg">
+                            <span class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none">Rp</span>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label for="interest_rate" class="block text-gray-700">Interest rate:</label>
+                        <div class="relative">
+                            <input type="number" step="0.01" id="interest_rate" name="interest_rate"
+                                   class="border border-gray-300 p-2 w-full pr-10 rounded-lg">
+                            <span class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none">%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <button type="submit" class="bg-blue-500 hover:bg-blue-600 w-[80%] cursor-pointer text-white p-2 rounded-lg">Save</button>
+                    <button type="button" class="bg-red-500 hover:bg-red-600 w-[20%] cursor-pointer text-white p-2 rounded-lg ml-2" onclick="document.getElementById('add-car-modal').classList.add('hidden')">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.querySelector('.header button').addEventListener('click', function() {
+            document.getElementById('add-car-modal').classList.remove('hidden');
+        });
+
+        document.getElementById('add-car-form').addEventListener('submit', function(event) {
+            // event.preventDefault();
+
+            if (document.getElementById('year').value < 1886 || document.getElementById('year').value > new Date().getFullYear()) {
+                alert('Please enter a valid year!');
+                return;
+            }
+
+            if (document.getElementById('base_price').value <= 0.0) {
+                alert('Please enter a valid base price!');
+                return;
+            }
+
+            if (document.getElementById('use_bank').checked) {
+                if (document.getElementById('loan').value == "" || document.getElementById('interest_rate').value == "") {
+                    alert('Please enter valid loan amount and interest rate!');
+                    return;
+                }
+
+                if (document.getElementById('loan').value <= 0.0 || document.getElementById('interest_rate').value <= 0.0) {
+                    alert('Please enter valid loan amount and interest rate!');
+                    return;
+                }
+
+            }
+            
+            document.getElementById('add-car-modal').classList.add('hidden');
+        });
+        document.getElementById('use_bank').addEventListener('change', function() {
+            const bankContent = document.querySelector('.bank-content');
+            if (this.checked) {
+                bankContent.classList.remove('hidden');
+            } else {
+                bankContent.classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>

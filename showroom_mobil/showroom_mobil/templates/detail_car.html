@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Showroom Mobil - {{ car.merk }}</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+</head>
+<body>
+    {% load format_rupiah %}
+    {% load calculation_filters %}
+    {% load escape_str %}
+    <div class="m-14 mx-64 p-4 justify-center bg-white dark:bg-gray-700 rounded-lg shadow-md">
+        <div class="flex justify-between items-center text-white mb-4">
+            <form method="POST" action="{% url 'dashboard' %}">
+                {% csrf_token %}
+                <button type="submit" class="bg-gray-500 hover:bg-blue-600 p-2 w-16 rounded-lg cursor-pointer">Back</button>
+            </form>
+            <h1 class="text-gray-800 dark:text-white text-2xl">Detail - {{ car.merk }} {{ car.model }}</h1>
+            <div class="flex items-center gap-2">
+                <button id="edit-car-btn" class="bg-blue-500 hover:bg-blue-600 p-2 w-16 rounded-lg cursor-pointer">Edit</button>
+                <form method="POST" action="{% url 'delete_car' car.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="bg-red-500 hover:bg-red-600 p-2 w-16 rounded-lg cursor-pointer">Delete</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="content-car overflow-x-auto h-[53vh]">
+            <table class="w-full table-auto border-collapse border border-gray-300">
+                <tbody>
+                    <tr class="hover:bg-gray-100">
+                        <td class="border border-gray-300 p-2 bg-gray-200">ID</td>
+                        <td class="border border-gray-300 p-2">{{ car.id }}</td>
+                    </tr>
+                    <tr class="hover:bg-gray-100">
+                        <td class="border border-gray-300 p-2 bg-gray-200">Merk</td>
+                        <td class="border border-gray-300 p-2">{{ car.merk }}</td>
+                    </tr>
+                    <tr class="hover:bg-gray-100">
+                        <td class="border border-gray-300 p-2 bg-gray-200">Model</td>
+                        <td class="border border-gray-300 p-2">{{ car.model }}</td>
+                    </tr>
+                    <tr class="hover:bg-gray-100">
+                        <td class="border border-gray-300 p-2 bg-gray-200">Year</td>
+                        <td class="border border-gray-300 p-2">{{ car.year }}</td>
+                    </tr>
+                    <tr class="hover:bg-gray-100">
+                        <td class="border border-gray-300 p-2 bg-gray-200">Base Price</td>
+                        <td class="border border-gray-300 p-2">{{ car.base_price|format_rupiah }}</td>
+                    </tr>
+                    <!-- <tr class="hover:bg-gray-100">
+                        <td class="border border-gray-300 p-2 bg-gray-200">Use bank funds</td>
+                        <td class="border border-gray-300 p-2"> 
+                            {% if car.use_bank %}
+                                Yes
+                            {% else %}
+                                No
+                            {% endif %}
+                        </td>
+                    </tr> -->
+                    {% if car.use_bank %}
+                        <tr class="hover:bg-gray-100">
+                            <td class="border border-gray-300 p-2 bg-gray-200">Loan</td>
+                            <td class="border border-gray-300 p-2">
+                                {{ car.loan|format_rupiah }}
+                            </td>
+                        </tr>
+                        <tr class="hover:bg-gray-100">
+                            <td class="border border-gray-300 p-2 bg-gray-200">Interest rate </td>
+                            <td class="border border-gray-300 p-2">
+                                {{ car.interest_rate }}%
+                            </td>
+                        </tr>
+                        <tr class="hover:bg-gray-100">
+                            <td class="border border-gray-300 p-2 w-[200px] bg-gray-200">Installments (Monthly)</td>
+                            <td class="border border-gray-300 p-2">
+                                {% calculate_monthly_payment car.loan car.interest_rate as monthly_payment %}
+                                {{ monthly_payment|format_rupiah }}
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="flex justify-between items-center text-white mt-4 mb-4 pt-4 border-t-2 border-gray-200">
+            <h1 class="text-gray-800 dark:text-white text-2xl">Service History - {{ car.merk }} {{ car.model }}</h1>
+            <div class="flex items-center gap-2">
+                <button id="add-service-btn" class="bg-green-500 hover:bg-green-600 p-2 rounded-lg cursor-pointer w-32">Add Service</button>
+            </div>
+        </div>
+
+        <div class="content-service overflow-x-auto h-[53vh]">
+            <table class="w-full table-auto border-collapse border border-gray-300 mt-4">
+                <thead>
+                    <tr class="bg-gray-200">
+                        <th class="border border-gray-300 p-2">Id</th>
+                        <th class="border border-gray-300 p-2">Cost</th>
+                        <th class="border border-gray-300 p-2">HPP</th>
+                        <th class="border border-gray-300 p-2">Description</th>
+                        <th class="border border-gray-300 p-2">Date</th>
+                        <th class="border border-gray-300 p-2">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for service in services %}
+                        <tr class="hover:bg-gray-100">
+                            <td class="border border-gray-300 p-2">{{ service.id }}</td>
+                            <td class="border border-gray-300 p-2">{{ service.cost|format_rupiah }}</td>
+                            <td class="border border-gray-300 p-2">
+                                {% calculate_hpp car.base_price car.loan car.interest_rate service.cost as hpp %}
+                                {{ hpp|format_rupiah }}
+                            </td>
+                            <td class="border border-gray-300 p-2 max-w-[200px]">{{ service.description }}</td>
+                            <td class="border border-gray-300 p-2">{{ service.service_date }}</td>
+                            <td class="border border-gray-300 p-2 flex justify-center gap-2">
+                                <button 
+                                    onclick="edit_service_modal_activate(
+                                        '{{ service.id }}',
+                                        '{{ service.cost }}',
+                                        '{{ service.description|escapejstr }}',
+                                        '{{ service.service_date }}'
+                                    )"
+                                    class="bg-blue-500 hover:bg-blue-600 text-white p-1 rounded-lg cursor-pointer w-16"
+                                >
+                                    Edit
+                                </button>
+                                <form method="POST" action="{% url 'delete_service' service.id %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="bg-red-500 hover:bg-red-600 text-white p-1 rounded-lg cursor-pointer w-16">Delete</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center p-2"> - No services available - </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="edit-car-modal" class="hidden fixed inset-0 bg-gray-700/50 bg-blur-90 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-lg p-4 w-1/3">
+            <h2 class="text-xl mb-4">Edit Car</h2>
+            <form id="add-car-form" method="POST" action="{% url 'edit_car' car.id %}">
+                {% csrf_token %}
+                <div class="flex w-full justify-between mb-4">
+                    <div>
+                        <label for="merk" class="block text-gray-700">Merk:</label>
+                        <input type="text" value="{{ car.merk }}" id="merk" name="merk" class="border border-gray-300 p-2 w-full rounded-lg" required>
+                    </div>
+                    
+                    <div>
+                        <label for="model" class="block text-gray-700">Model:</label>
+                        <input type="text" value="{{ car.model }}" id="model" name="model" class="border border-gray-300 p-2 w-full rounded-lg" required>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <label for="year" class="block text-gray-700">Year:</label>
+                    <input type="number" value="{{ car.year }}" id="year" name="year" class="border border-gray-300 p-2 w-full rounded-lg" required>
+                </div>
+                
+                <div class="mb-4">
+                    <label for="base_price" class="block text-gray-700">Base price:</label>
+                    <div class="relative">
+                        <input type="number" value="{{ car.base_price }}" step="0.01" id="base_price" name="base_price" class="border pr-10 border-gray-300 p-2 w-full rounded-lg" required>
+                        <span class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none">Rp</span>
+                    </div>
+                </div>
+
+                <div class="mb-4 flex gap-2 items-center">
+                    <input type="checkbox" id="use_bank" name="use_bank" class="border border-gray-300 p-2 rounded-lg" {% if car.use_bank %}checked{% endif %}>
+                    <label for="use_bank" class="block text-gray-700">using bank funds</label>
+                </div>
+
+                <div class="bank-content hidden">
+                    <div class="mb-4">
+                        <label for="loan" class="block text-gray-700">Loan amount:</label>
+                        <div class="relative">
+                            <input type="number" value="{{ car.loan }}" step="0.01" id="loan" name="loan" class="border pr-10 border-gray-300 p-2 w-full rounded-lg">
+                            <span class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none">Rp</span>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label for="interest_rate" class="block text-gray-700">Interest rate:</label>
+                        <div class="relative">
+                            <input type="number" value="{{ car.interest_rate }}" step="0.01" id="interest_rate" name="interest_rate"
+                                   class="border border-gray-300 p-2 w-full pr-10 rounded-lg">
+                            <span class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none">%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between gap-2">
+                    <button type="submit" class="bg-blue-500 hover:bg-blue-600 w-[80%] cursor-pointer text-white p-2 rounded-lg">Update</button>
+                    <button type="button" class="bg-red-500 hover:bg-red-600 w-[20%] cursor-pointer text-white p-2 rounded-lg ml-2" onclick="document.getElementById('edit-car-modal').classList.add('hidden')">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="add-service-modal" class="hidden fixed inset-0 bg-gray-700/50 bg-blur-90 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-lg p-4 w-1/3">
+            <h2 class="text-xl mb-4">Add Service</h2>   
+            <form id="add-service-form" method="POST" action="{% url 'add_service' car.id %}">
+                {% csrf_token %}
+                <div class="mb-4">
+                    <label for="cost" class="block text-gray-700">Cost:</label>
+                    <input type="number" id="cost" name="cost" class="border border-gray-300 p-2 w-full rounded-lg" required>
+                </div>
+                <div class="mb-4">
+                    <label for="date" class="block text-gray-700">Date:</label>
+                    <input type="date" id="date" name="date" class="border border-gray-300 p-2 w-full rounded-lg" required>
+                </div>
+                <div class="mb-4">
+                    <label for="description" class="block text-gray-700">Description:</label>
+                    <textarea id="description" name="description" class="border border-gray-300 w-full min-h-[200px] resize-none p-2 w-full rounded-lg" required></textarea>
+                </div>
+                <div class="flex items-center justify-between gap-2">
+                    <button type="submit" class="bg-blue-500 hover:bg-blue-600 w-[80%] cursor-pointer text-white p-2 rounded-lg">Save</button>
+                    <button id="close-add-service-modal" class="bg-red-500 hover:bg-red-600 w-[20%] cursor-pointer text-white p-2 rounded-lg">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="edit-service-modal" class="hidden fixed inset-0 bg-gray-700/50 bg-blur-90 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-lg p-4 w-1/3">
+            <h2 class="text-xl mb-4">Edit Service</h2>   
+            <form id="edit-service-form" method="POST">
+                {% csrf_token %}
+                <div class="mb-4">
+                    <label for="edit-service-cost" class="block text-gray-700">Cost:</label>
+                    <input type="number" id="edit-service-cost" name="cost" class="border border-gray-300 p-2 w-full rounded-lg" required>
+                </div>
+                <div class="mb-4">
+                    <label for="edit-service-date" class="block text-gray-700">Date:</label>
+                    <input type="date" id="edit-service-date" name="date" class="border border-gray-300 p-2 w-full rounded-lg" required>
+                </div>
+                <div class="mb-4">
+                    <label for="edit-service-description" class="block text-gray-700">Description:</label>
+                    <textarea id="edit-service-description" name="description" class="border border-gray-300 w-full min-h-[200px] resize-none p-2 w-full rounded-lg" required></textarea>
+                </div>
+                <div class="flex items-center justify-between gap-2">
+                    <button type="submit" class="bg-blue-500 hover:bg-blue-600 w-[80%] cursor-pointer text-white p-2 rounded-lg">Update</button>
+                    <button id="close-edit-service-modal" class="bg-red-500 hover:bg-red-600 w-[20%] cursor-pointer text-white p-2 rounded-lg">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('#add-service-btn').click(function() {
+                $('#add-service-modal').removeClass('hidden');
+            });
+            
+            $('#edit-car-btn').click(function() {
+                $('#edit-car-modal').removeClass('hidden');
+            });
+    
+            $('#close-add-service-modal').click(function() {
+                $('#add-service-modal').addClass('hidden');
+            });
+           
+            $('#close-edit-service-modal').click(function() {
+                document.getElementById('edit-service-cost').value = '';
+                document.getElementById('edit-service-date').value = '';
+                document.getElementById('edit-service-description').value = '';
+                document.getElementById('edit-service-form').action = '';
+                $('#edit-service-modal').addClass('hidden');
+            });
+        });
+
+        function edit_service_modal_activate(service_id, cost, description, date) {
+            document.getElementById('edit-service-form').action = "edit_service/" + service_id;
+            document.getElementById('edit-service-cost').value = cost;
+            let dates = new Date(date);
+            let formattedDate = dates.toISOString().split('T')[0];
+            document.getElementById('edit-service-date').value = formattedDate;
+            document.getElementById('edit-service-description').value = description;
+            document.getElementById('edit-service-modal').classList.remove('hidden');
+        }
+
+        document.getElementById('add-service-form').addEventListener('submit', function(event) {
+            // event.preventDefault();
+    
+            if (document.getElementById('cost').value <= 0.0) {
+                event.preventDefault();
+                alert('Cost must be greater than 0');
+                return;
+            }
+    
+            document.getElementById('add-service-modal').classList.add('hidden');
+        });
+    
+        document.getElementById('use_bank').addEventListener('change', function() {
+            const bankContent = document.querySelector('.bank-content');
+            if (this.checked) {
+                bankContent.classList.remove('hidden');
+            } else {
+                bankContent.classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
